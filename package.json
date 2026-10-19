@@ -1,0 +1,15 @@
+{
+  "name": "@medialaneprotocol/spec",
+  "version": "1.0.0",
+  "description": "The specification of the Media Lane Protocol (MLP): a transport for real-time interactive media over slow and lossy links.",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/check-references.mjs",
+    "check:impl": "node scripts/check-references.mjs --impl ../mlp-core --impl ../mlp-ts --impl ../mlp-conformance"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

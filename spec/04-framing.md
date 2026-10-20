@@ -62,7 +62,7 @@ name what an update's content means.
 | `0x04` | `UPDATE_BYTES` | 4 | u32 | C3 | the update's total payload bytes |
 | `0x05` | `CHAIN_EPOCH` | 4 | u32 | C3 | the chain epoch; changes when the sender breaks the chain |
 | `0x06` | `REFLECTS_INPUT_SEQ` | 8 | u64 | C3 | the highest input sequence whose effect the update's content includes (N-1) |
-| `0x07` | `SEND_EPOCH_MS` | 8 | u64 | C3,C4 | the sender's session-relative ms at first emission; preserved verbatim on `RETRANSMIT`, which is what makes the round-trip time and the echo computable without wall clocks |
+| `0x07` | `SEND_EPOCH_MS` | 8 | u64 | C3,C4 | the sender's session-relative ms at first emission; preserved verbatim on `RETRANSMIT` and quoted verbatim in a probe's echo, which is what makes the round-trip time and the echo computable without wall clocks |
 | `0x08` | `DEADLINE_EPOCH_MS` | 8 | u64 | C3,C4 | the absolute session-relative deadline; a receiver past it drops the object and counts `expired` |
 | `0x09` | `ECHO_OF_OBJECT_ID` | 4 | u32 | C4 | the object being echoed or acknowledged |
 | `0x0A` | `BUDGET_BYTES` | 4 | u32 | C4 | the sender's current per-update budget (receiver-visible diagnostics) |

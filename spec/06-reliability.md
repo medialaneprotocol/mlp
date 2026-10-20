@@ -27,7 +27,8 @@ send. It is a pure function of the reports it receives and the state it
 keeps; it never reads a clock of its own and never assumes a link.
 
 **Inputs.** `on_feedback(feedback, now)`, `on_hop_report(report, now)`,
-`on_send(bytes, object_id, now)`, `on_timeout(now)`.
+`on_send(bytes, object_id, now)`, `on_probe_echo(echo, now)`,
+`on_timeout(now)`.
 
 **Output.** An estimate: `pace_bps`, `budget_bytes`, `max_object_bytes`,
 `target_fps`, `mode`, `loss_ratio`, `rtt_ms`, `jitter_ms`.
@@ -39,11 +40,22 @@ reports at that cadence; the hops report at the same cadence.
 
 ### 6.2.2 Measurements
 
+- The round-trip samples are the **sender's own**: each probe echo answers one
+  of the sender's probes, and the sample is `now − SEND_EPOCH_MS` on the
+  sender's own clock (§6.2.6). The receiver's reported round trip is a
+  second view of the same path, measured on the receiver's clock and at most
+  one probe interval old; it is compared with the sender's own and the
+  disagreement is counted, never mixed into the filters. A minimum, an EWMA
+  and their difference are only meaningful when every sample is the same
+  measurement taken on one clock.
 - `goodput_bps = received_bytes × 8 000 / window_ms` — the receiver's
   reported payload bytes only.
 - `delivered_ratio = received_objects / (received_objects + lost_objects)`,
   and `loss_ratio = 1 − delivered_ratio`, from gap detection on
-  `object_id`.
+  `object_id`. A lane's writer drains strictly by priority (D-3), so an
+  object may overtake an older one on the wire: the expectation is the
+  highest object id seen plus one, an id below it is **reordered** and not
+  lost, and a reordered object never lowers the expectation.
 - `rtt_min` is the minimum over a 60 s horizon; `rtt_ewma` is
   `EWMA(α = 1/8)`; `jitter` is `EWMA(|rtt_sample − rtt_ewma|, α = 1/4)`.
 - `queue_delay = rtt_ewma − rtt_min` — the delay-based congestion signal.
@@ -52,10 +64,19 @@ reports at that cadence; the hops report at the same cadence.
 
 ```
 on_report:
-  if loss_ratio > 0.02 or queue_delay > max(50 ms, 0.5 × rtt_min):
+  if capacity_limited and (loss_ratio > 0.02 or
+                           queue_delay > max(50 ms, 0.5 × rtt_min)):
       btlbw = 0.85 × btlbw        # decay: the link is telling us something
   btlbw = max(btlbw, min(goodput_bps, ceiling_bps))
 ```
+
+A window is **capacity-limited** when the sender sent at (or above) its own
+pace during it. A window the sender did not fill was application-limited:
+the link was never asked to carry more, so the window carries no capacity
+signal and the estimate stands. Without that condition a quiet lane ratchets
+its own estimate down — a window with two objects in it reports the loss of
+one of them as fifty percent, and the sender concludes that a link it never
+used is a slow one.
 
 ### 6.2.4 The state machine
 
@@ -67,6 +88,11 @@ on_report:
 | `Floor` | `pace < pace_floor` | `pace_floor` (8 kbps), with media disabled except P0 and the idle heartbeat | reports resume ⇒ `StartUp` |
 
 The pace is clamped to `[pace_floor (8 000), min(ceiling_bps, 50 000 000)]`.
+
+The `0.7 ×` decay of the degraded state applies to capacity-limited windows
+only (§6.2.3): a window the sender did not fill says nothing about the
+link's capacity, and a link that keeps delivering must not be ratcheted
+below what it demonstrably carries.
 
 ### 6.2.5 The budgets
 
@@ -90,14 +116,33 @@ alive.
 ### 6.2.6 Probes
 
 A probe is how the sender measures a link the receiver's
-reports do not describe. It is triggered in `Steady` when
-`demand_bps > pace_bps` for `max(3 × rtt_min, 1 s)`, or every 30 s. The
-probe is a feedback-class object with
+reports do not describe. It is triggered in `Steady` **and in `Degraded`**
+when `demand_bps > pace_bps` for `max(3 × rtt_min, 1 s)`, or every 30 s. A
+degraded estimator needs the measurement most: with the probe reserved for
+the steady state, an estimator that fell into `Degraded` could never find
+out that the link carries more than it is sending, and the state would be
+a one-way ratchet down.
+
+The probe is a feedback-class object with
 `payload_bytes = min(8 192, 0.25 × pace_bps/8)`, sent at
-`min(1.25 × btlbw, 1.25 × pace)` with `ECHO_REQUESTED`. A delivered probe
-raises `btlbw` to `max(btlbw, probe_rate × delivered_ratio)`; a lost probe
-multiplies `btlbw` by 0.9 and is counted. A probe never carries content and
-is never counted into `budget_bytes`.
+`min(1.25 × btlbw, 1.25 × pace)` with `ECHO_REQUESTED`. It carries
+`SEND_EPOCH_MS` — the sender's session-relative ms at emission — and the
+peer quotes that epoch verbatim in its echo. The round trip is therefore
+`now − SEND_EPOCH_MS` on the sender's own clock: one clock, one
+measurement, and no assumption that the two ends' session clocks agree.
+
+A delivered probe raises `btlbw` to `max(btlbw, probe_rate ×
+delivered_ratio)`; a probe whose echo did not come back within
+`2 × RTT + 250 ms` (§9.1) multiplies `btlbw` by 0.9 and is counted. A probe
+sent before the sender measured a round trip has no deadline: its answer
+*is* the measurement, and a link that has never answered anything is the
+no-feedback case, not a lost probe. A probe never carries content and is
+never counted into `budget_bytes`.
+
+**The receiver probes too.** The round trip a receiver reports is its own
+measurement, taken with its own probe; a receiver that has not measured
+one has no figure to report, and the sender does not read the report's
+figure as a measurement in any case (§6.2.2).
 
 ### 6.2.7 Priors
 

@@ -15,10 +15,12 @@ from the sections and from the reference implementation.
 | D-4 | A peer that does not speak this version is **refused with a typed reason**, and there is no fallback. | A silent fallback is a session that appears to work and is subtly wrong. A typed refusal is a failure an operator can see. |
 | D-5 | The protocol moves content it **does not interpret**; the codec owns the content. | A transport that understands its content cannot be reused for the next content type, and cannot be implemented by a party that did not write the codec. |
 | D-5c | A receiver that holds a stale state is repaired by an **anchor plan over the cells it is missing**, not by a reset. | A reset is full-coverage by definition: on a slow link no budget makes it timely, and it remains the only object that can lose a receiver's whole progress. |
+| D-6 | A lost echo-critical update is **repaired** — the cells the receiver is missing are encoded again into a new update — rather than retransmitted. | A retransmission costs the whole object a second time, and the object it repeats may no longer be the one the receiver needs; a repair carries only what is missing. |
 | D-7 | The sender keeps **per-receiver accounting of which cells each receiver may be stale in**, and repairs exactly those. | Convergence becomes a set difference rather than a feeling (§2.2, N-2). |
 | D-8 | The input path is **deadline-bounded, deduplicated, and prioritised**, and a release is never dropped. | A dropped release is a stuck key, and a stuck key is the one failure a user cannot work around. |
 | D-9 | A stall is a **repair trigger**, never a pause of content production. | A transport problem that stops the content turns into a content problem. |
 | D-16 | An intermediary **reports what it dropped**, so a loss is attributable. | "The last mile or our stack?" is unanswerable without per-hop attribution. |
+| D-17 | The media lane carries **no audio**: the tier envelope's budget belongs to the screen. | A media lane at the T4 envelope carries less than one second of audio, so an audio stream on it would spend the whole budget on something the envelope does not promise. |
 | D-19 | A frame is **decomposed into several objects** rather than sent oversize. | The carrier's cap is not negotiable, and an oversize object is a permanent loss rather than a delay. |
 
 ### 13.2 Annex N — the normative refinements

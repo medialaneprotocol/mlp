@@ -142,7 +142,11 @@ its writer waited on capacity.
 A hop that cannot produce a report — no clock, no data — sends none. The
 sender then attributes the window to an unknown hop and counts it.
 
-`MediaProbe` is a path probe: it never carries content.
+`MediaProbe` is a path probe: it never carries content. It carries the
+sender's session-relative epoch in `SEND_EPOCH_MS`, and the peer quotes that
+epoch verbatim in its echo — the round trip is then measured on the
+sender's own clock, with no wall clock and no assumption that the two ends'
+session clocks agree.
 
 ## 5.3 Class CONTROL (C0) and class PATH (C5)
 

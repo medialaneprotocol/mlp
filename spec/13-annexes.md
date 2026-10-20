@@ -1,6 +1,8 @@
 # Annexes
 
-## Annex D — the decisions
+## 13. The annexes
+
+### 13.1 Annex D — the decisions
 
 The protocol's design decisions, in the order they were made. Each is a
 choice that a later decision could have reversed, and each is referenced
@@ -19,7 +21,7 @@ from the sections and from the reference implementation.
 | D-16 | An intermediary **reports what it dropped**, so a loss is attributable. | "The last mile or our stack?" is unanswerable without per-hop attribution. |
 | D-19 | A frame is **decomposed into several objects** rather than sent oversize. | The carrier's cap is not negotiable, and an oversize object is a permanent loss rather than a delay. |
 
-## Annex N — the normative refinements
+### 13.2 Annex N — the normative refinements
 
 The four properties that sharpen the tiers (§2.2). Each is measurable, and
 each is asserted.
@@ -31,7 +33,7 @@ each is asserted.
 | N-3 | **The T4 floor is text-first**, and a stream carrier may not sustain it. The structural properties hold on every carrier; the goodput floor is guaranteed only where a loss-tolerant carrier is in use. |
 | N-4 | **The outage budget arithmetic.** Every idle timeout exceeds the outage target with margin, and the continuity machinery — not a timeout — bounds the recovery. |
 
-## Annex INV — the invariants
+### 13.3 Annex INV — the invariants
 
 The properties a conforming implementation must hold under any profile
 (§11.2).
@@ -49,7 +51,7 @@ The properties a conforming implementation must hold under any profile
 | INV-9 | A session survives every outage and flap schedule, with no lost session. |
 | INV-10 | Every drop is attributed to exactly one hop. |
 
-## Annex S — the acceptance stories
+### 13.4 Annex S — the acceptance stories
 
 The stories the conformance corpus's scenarios cover. Each is a property a
 user would notice, and each is checked by a committed scenario.

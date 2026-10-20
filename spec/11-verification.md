@@ -10,7 +10,7 @@ at each of them.
 |---|---|---|---|
 | L1 unit | the fragment codec, the assembly, the TLV registry, the estimator, the pacer, the scheduler, the convergence accounting, the input queue, the resume machine | the reference implementation's own tests | on every change |
 | L2 harness | both ends as machines over a deterministic link model, with a scenario per tier and the invariants checked as it runs | [`mlp-harness`](https://github.com/medialaneprotocol/mlp-harness) | on every change |
-| L3 conformance | the committed scenarios and decision traces, replayed by the reference implementation **and** by the browser implementation; the regeneration byte-compared | [`mlp-conformance`](https://github.com/medialaneprotocol/mlp-conformance) | on every change |
+| L3 conformance | the committed scenarios and decision traces, replayed by the verification layer **and** by the browser implementation; the regeneration byte-compared | [`mlp-conformance`](https://github.com/medialaneprotocol/mlp-conformance) | on every change |
 | L4 property | the tier budgets and the invariants as asserted properties, over randomized profiles, with a failing case shrunk to a counterexample | the harness's property suite | on every change |
 | L5 network | a live stack over a shaped link, with a real client driving the real interface and the metrics asserted | the chaos harness | on demand and on a schedule |
 | L6 field | real hardware on real hostile networks | the acceptance runbook | at a release |
@@ -50,24 +50,24 @@ cannot fail is a decoration.
 
 ## 11.4 The conformance gate
 
-The gate validates the corpus's schema, the profile-to-tier identity, the
-corpus's completeness, the digest stability (it regenerates the traces and
-compares the bytes), and that both consumers resolve to the one canonical
-corpus directory.
+The gate validates the corpus's completeness, the stability of the traces
+(it regenerates them and compares the bytes), and that both consumers
+resolve to the one canonical corpus directory.
 
-**The two consumers.** The reference implementation replays every committed
-scenario through its simulator and writes the decision traces; the gate
-regenerates them and compares the bytes. The browser implementation replays
-the same corpus and requires its own machine to decide the way the published
-trace says the protocol decides: the applied window's progression, the
-acknowledgements the window reports, the chain epoch, and the validity of
-every acknowledgement. A browser implementation that cannot read the corpus
-fails its own gate — a comparison that read nothing is not a comparison.
+**The two consumers.** The verification layer replays every committed
+scenario through the protocol's own machines and writes the decision
+traces; the gate regenerates them and compares the bytes. The browser
+implementation replays the same corpus and requires its own machine to
+decide the way the published trace says the protocol decides: the applied
+window's progression, the acknowledgements the window reports, the chain
+epoch, and the validity of every acknowledgement. A browser implementation
+that cannot read the corpus fails its own gate — a comparison that read
+nothing is not a comparison.
 
 **The gate checks its own teeth.** A mutation of the corpus must be
-noticed: a tier profile whose numbers drifted from the canonical point, a
-scenario that dropped one of the matrix's cases, and a trace whose digest
-was tampered with. A gate that cannot fail is not a gate.
+noticed: a scenario the acceptance matrix does not name, a scenario that
+does not parse, and a trace whose digest was tampered with. A gate that
+cannot fail is not a gate.
 
 The traces are **generated, never written by hand.** When a protocol change
 alters a decision, the traces are regenerated and the diff is part of the

@@ -40,6 +40,15 @@ corpus's completeness, the digest stability (it regenerates the traces and
 compares the bytes), and that both consumers resolve to the one canonical
 corpus directory.
 
+**The two consumers.** The reference implementation replays every committed
+scenario through its simulator and writes the decision traces; the gate
+regenerates them and compares the bytes. The browser implementation replays
+the same corpus and requires its own machine to decide the way the published
+trace says the protocol decides: the applied window's progression, the
+acknowledgements the window reports, the chain epoch, and the validity of
+every acknowledgement. A browser implementation that cannot read the corpus
+fails its own gate — a comparison that read nothing is not a comparison.
+
 **The gate checks its own teeth.** A mutation of the corpus must be
 noticed: a tier profile whose numbers drifted from the canonical point, a
 scenario that dropped one of the matrix's cases, and a trace whose digest
@@ -47,7 +56,9 @@ was tampered with. A gate that cannot fail is not a gate.
 
 The traces are **generated, never written by hand.** When a protocol change
 alters a decision, the traces are regenerated and the diff is part of the
-change's review.
+change's review. A change that alters a decision belongs to the reference
+implementation and to the corpus — never to an implementation that only
+consumes them.
 
 ## 11.4 The network layer
 

@@ -217,6 +217,13 @@ Per receiver: the pending cells (each with the update they
 were sent in and the time), the acknowledged window, the last applied
 update id, and the chain epoch.
 
+The acknowledged window is the 64-bit bitmap of §5.2: bit `i` names the
+update `highest − i`. It slides one id at a time, it holds the last 64
+ids, an update that fell out of it is no longer marked, and a jump of 64
+ids or more leaves it holding the new update alone. The window is what
+the receiver *holds*; the chain epoch (§5.1) is how much of it the
+receiver still believes, and the two move independently.
+
 ### 6.5.3 Acknowledgement processing
 
 On an acknowledgement, every cell of every

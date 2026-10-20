@@ -66,6 +66,11 @@ they are about *the receiver's state* rather than about content:
   it — reports the epoch in its next acknowledgement, and the sender
   starts an anchor plan. Epochs are never compared across media sessions.
 
+  The epoch does not touch the receiver's **applied-update window** (§6.5.2):
+  an epoch is not an update, and the updates the receiver applied are still
+  applied. The window says what the receiver holds, and the trust says how
+  much of it the receiver still believes.
+
 Everything else — the validation order, the atomicity, the
 acknowledge-on-apply rule — belongs to the codec, and the codec's
 specification owns it.
@@ -87,6 +92,36 @@ cannot use it keeps its local shape.
 applied, a 64-bit window of which updates around it were applied, the
 chain epoch it is on, its repair-grid size, its own count of cells it
 believes stale, and whether it believes it has converged.
+
+**The window.** Bit `i` of `ack_bitmap` names the update
+`highest_applied_update_id − i`, for `i` in `0..64`. The window is 64
+updates wide, and it is a `uint64`: a receiver that reports fewer bits
+than the field holds is a different receiver, because the sender reads
+the missing bits as "not applied" and re-sends cells the receiver
+already holds.
+
+**The update ids.** The update ids start at 1. A window that names an
+update id of 0 names an update that does not exist, so a set bit `i`
+MUST satisfy `i < highest_applied_update_id`; the peer refuses the
+acknowledgement otherwise (`ACK_BAD_BITMAP`). A receiver that is told
+about the update id 0 records it as it was told — the window says what
+the receiver was told, and the id 0 is not an update the receiver can
+report as applied.
+
+**The belief.** `converged` is the receiver's own belief about the
+surface, and it is reported as the receiver holds it; the sender's
+accounting is the authoritative one (§6.5.5). The same is true of
+`applied_cell_count` and `stale_cells`: they are the receiver's numbers.
+The peer refuses an acknowledgement whose stale count exceeds its
+applied count (`ACK_BAD_COUNT`).
+
+**The echo.** `echo_of_input_seq` is the highest input sequence
+*visible in the applied cells*, and it is the receiver's own report: the
+receiver's application says what its content reflects, and the report is
+taken as it comes — a rebase drops the content that reflected the older
+input. The sender's stamp on an update (TLV `0x06`, §5.1) is the
+sender's claim about that update, and it is what the receiver computes
+the echo *from* (annex N, N-1); it is not the applied content's echo.
 
 Validation: bits above `highest_applied_update_id` MUST be 0 ⇒
 `ACK_BAD_BITMAP`; `stale_cells <= applied_cell_count` ⇒ `ACK_BAD_COUNT`.

@@ -10,8 +10,9 @@
 #   scripts/verify.sh --all          # require every repository
 #
 # The repositories are expected next to this one as `../mlp-core`,
-# `../mlp-ts`, `../mlp-proto` and `../mlp-conformance`. A repository that
-# is absent is reported and skipped, unless `--all` was given.
+# `../mlp-ts`, `../mlp-proto`, `../mlp-conformance` and `../mlp-harness`. A
+# repository that is absent is reported and skipped, unless `--all` was
+# given.
 
 set -euo pipefail
 
@@ -22,6 +23,7 @@ CORE_DIR="${MLP_CORE_DIR:-$WORKSPACE/mlp-core}"
 TS_DIR="${MLP_TS_DIR:-$WORKSPACE/mlp-ts}"
 PROTO_DIR="${MLP_PROTO_DIR:-$WORKSPACE/mlp-proto}"
 CONFORMANCE_DIR="${MLP_CONFORMANCE_DIR:-$WORKSPACE/mlp-conformance}"
+HARNESS_DIR="${MLP_HARNESS_DIR:-$WORKSPACE/mlp-harness}"
 
 REQUIRE_ALL=0
 for argument in "$@"; do
@@ -97,6 +99,12 @@ step "mlp-conformance: the corpus is reproducible" "$CONFORMANCE_DIR" \
 
 step "mlp-conformance: the gate checks its own teeth" "$CONFORMANCE_DIR" \
     scripts/conformance-gate.sh --self-test
+
+step "mlp-harness: the harness's own checks" "$HARNESS_DIR" \
+    scripts/verify.sh
+
+step "mlp-harness: the gate checks its own teeth" "$HARNESS_DIR" \
+    scripts/verify.sh --self-test
 
 if [ "$FAILURES" -eq 0 ]; then
     echo "verify: all checks passed ($PASSES passed, $SKIPPED skipped)"

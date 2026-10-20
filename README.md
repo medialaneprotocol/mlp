@@ -17,6 +17,9 @@ stale in.
   class bodies' wire schemas.
 - **[`mlp-conformance`](https://github.com/medialaneprotocol/mlp-conformance)**
   — the corpus and the gate that keeps it honest.
+- **[`mlp-harness`](https://github.com/medialaneprotocol/mlp-harness)**
+  — the verification layer: a deterministic link model, the invariants
+  checked over it, and the predictions it answers with.
 
 ## The one-paragraph version
 

@@ -37,6 +37,9 @@ version: a peer that speaks another one is refused with a typed reason,
 and there is no transition window and no fallback. See
 [§12.1](spec/12-deployment.md).
 
+The repository is in development. One moving version, `v0.1.0`, naming the
+current commit: there is exactly one tag, and a change moves it.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). A specification change is a

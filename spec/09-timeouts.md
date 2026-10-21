@@ -28,7 +28,8 @@ It never pauses content production, and it never triggers a reset.
 | The park TTL | `clamp(2 × outage + 60 s, 120 s, 900 s)` |
 | The resume grace | `2 × RTT + 2 s` |
 | The assembly timeout | `3 × RTT + 500 ms` |
-| The report cadence | `clamp(4 × RTT, 250 ms, 2 s)` |
+| The report cadence | `clamp(4 × RTT, 250 ms, 2 s)` — the **idle** cadence; a report goes out at once when it carries an input echo or a loss attribution (§6.2.1) |
+| The prompt report | `clamp(RTT / 4, 25 ms, 250 ms)` — the shortest wait between two prompt reports (§6.2.1) |
 | The lane handshake | `clamp(2 × RTT + 2 s, 5 s, 45 s)` |
 | The session's idle at the edge | `clamp(2 × outage + 60 s, 120 s, 600 s)`; **any inbound byte resets it** |
 | The keepalive | `clamp(3 × RTT, 5 s, 60 s)` |

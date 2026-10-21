@@ -35,8 +35,54 @@ keeps; it never reads a clock of its own and never assumes a link.
 
 ### 6.2.1 Cadence
 
-`report_interval_ms = clamp(4 × rtt_min_ms, 250, 2 000)`. The receiver
-reports at that cadence; the hops report at the same cadence.
+`report_interval_ms = clamp(4 × rtt_min_ms, 250, 2 000)` is the **idle**
+cadence: the rate at which a receiver reports when it has nothing to say.
+The hops report at the same cadence.
+
+A report is **due at once** when the receiver holds a fact the sender cannot
+wait for:
+
+- an **input echo** — the acknowledgement names an input sequence the sender
+  has not been told about (§5.2, annex N-1);
+- a **loss attribution** — the receiver observed a gap in the update-id space
+  since the last report (§5.2).
+
+Everything else waits for the idle cadence.
+
+**Why.** The acknowledgement's echo is the receiver's answer to the sender's
+input, and the echo's promise (annex INV-8) bounds the whole echo at
+`2 × RTT + 250 ms`. A report that waits for the cadence spends that budget
+before the answer leaves: at T2 the cadence is 600 ms and the promise is
+550 ms, and at T4 the cadence is 2 s. No link, however fast, meets the
+promise behind a fixed wait, so the wait must not be fixed. The same wait
+delays the answer to a probe, whose own deadline is `2 × RTT + 250 ms`
+(§6.2.6), and the acknowledgement that tells the sender which of its cells
+the receiver still misses.
+
+**The prompt report is not a measurement.** The measurement window is the
+idle cadence's: a report that closes the window carries the window's counters
+and the window's length, and a report that goes out before the window closed
+carries **no window at all** (`window_ms = 0`) and says so. The sender reads
+a window-less report as an acknowledgement and a sign of life (§6.2.8) and
+does not move its estimate on it: a goodput over an open window is whatever
+the last burst carried, and a loss ratio over one lost object in three is a
+third. The estimator's state machine advances on the reports that close a
+window, and on those only.
+
+**The bound.** The prompt report leaves as soon as the fact exists, and its
+rate is bounded by `prompt_interval = clamp(rtt_min_ms / 4, 25, 250)`: one
+report per new echo and per observed loss, and never more often than that.
+The bound keeps three promises at once — the echo's budget (the wait is a
+quarter of a round trip, so the whole echo stays inside
+`2 × RTT + 250 ms`), the link's share (a report is a hundred bytes or so, so
+the feedback class stays a small part of the budget even at the floor), and
+the idle cadence's own purpose (a lane with nothing to say still reports at
+`report_interval_ms`, and the prompt does not replace it — it is an extra
+report, and the next window still closes on the cadence).
+
+A receiver that has measured no round trip yet uses the floor of the prompt
+interval, so the first prompt is never later than 25 ms after the fact
+exists.
 
 ### 6.2.2 Measurements
 

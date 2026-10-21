@@ -165,6 +165,9 @@ input. The sender's stamp on an update (TLV `0x06`, §5.1) is the
 sender's claim about that update, and it is what the receiver computes
 the echo *from* (annex N, N-1); it is not the applied content's echo.
 
+A new echo is a fact the sender cannot wait for: the report that names it
+goes out at once, not at the idle cadence (§6.2.1).
+
 Validation: bits above `highest_applied_update_id` MUST be 0 ⇒
 `ACK_BAD_BITMAP`; `stale_cells <= applied_cell_count` ⇒ `ACK_BAD_COUNT`.
 
@@ -175,6 +178,12 @@ counters cover, the acknowledgement, the probe echoes, its own outbound
 backlog, its measured frame rate and render times, its input queue depth
 and input counters, its path switches, the active carrier, and an
 application identifier for diagnostics.
+
+**The window may be open.** A report that goes out before its measurement
+window closed carries no window at all (`window_ms = 0`): it is an
+acknowledgement and a sign of life, not a measurement, and the sender reads
+it as such (§6.2.1). The report that closes the window carries the
+window's counters and the window's length.
 
 **The gaps are the gaps in the update-id space.** The `lost_objects` a
 receiver reports is the number of media updates it never saw, counted in

@@ -29,7 +29,10 @@ and their volume does not.
 
 2. **Strict priority within a lane.** A lane's writer drains
    C0 → C1 → C2 → C4 → C3(priority 6) → C3(priority 7). The MLP priority
-   field is the single authority.
+   field is the single authority. A class that is not droppable — C0, C1 and
+   C4 — is never dropped behind the droppable classes: the queue that holds
+   them is sized for the class's own window (a reporting window for C4), and
+   the media bulk has its own slot, so a full lane never costs a report.
 
 3. **Reserved rate.** The media-lane pacer reserves
    `reserved_rate = max(2 kbps, 10 % × pace_bps)`; a media object may not be

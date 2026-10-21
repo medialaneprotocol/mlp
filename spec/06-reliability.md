@@ -163,12 +163,27 @@ round-trip time, so a cold start on a T4 link costs ≈ 3 RTT (≈ 6 s) before
 the rate is useful. That is why the first object is always an anchor plan
 at the floor rate: the receiver gets something honest immediately.
 
-### 6.2.8 Missing reports
+### 6.2.8 Missing feedback
 
-If no feedback arrives for `3 × report_interval + 2 s`,
-the mode becomes `NoFeedback`, the pace drops to `pace_floor × 2`,
-`target_fps` to 1, `max_object_bytes` to 1 024, and only P0 and P1 objects
-are scheduled. One report clears it. The stall is counted.
+If no **sign of life** arrives for `3 × report_interval + 2 s`, the mode
+becomes `NoFeedback`, the pace drops to `pace_floor × 2`, `target_fps` to
+1, `max_object_bytes` to 1 024, and only P0 and P1 objects are scheduled.
+One sign of life clears it. The stall is counted.
+
+**A sign of life is any object the peer sends: a report, an
+acknowledgement, or the echo of a probe this sender sent.** A report is the
+estimator's *measurement*; the proof that the lane is alive is the traffic
+itself. Class C4 is "reliable within a reporting window" (§3.1) and the loss
+of one report is harmless, so a lane whose acknowledgements keep arriving is
+a live lane whose measurement is late — not a dead one. A grace that only a
+report can move is a grace a single lost report resets to its floor, and
+the link then looks dead while it is merely quiet.
+
+The grace is a function of the **last known** round trip (§6.2.2) with a
+floor: a link that has measured a round trip keeps the grace that
+measurement earned, and a link that has never answered one gets the floor.
+Every sign of life extends the grace; the grace's own expiry never shortens
+it.
 
 **A cap that dropped takes the objects it forbids with it.** The cap is
 the sender's own bound on what one object may carry, so an object the

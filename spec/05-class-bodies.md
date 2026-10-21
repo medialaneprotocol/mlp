@@ -71,6 +71,48 @@ they are about *the receiver's state* rather than about content:
   applied. The window says what the receiver holds, and the trust says how
   much of it the receiver still believes.
 
+  **The epoch is the sender's, and it only moves forward.** A receiver
+  adopts a *greater* epoch and never a smaller one. An acknowledgement
+  that names an epoch **older** than the sender's is a stale
+  acknowledgement — the receiver has not seen the break yet — and the
+  sender MUST NOT obey it: moving the epoch back would reset the
+  sender's applied-update watermark and re-mark every emitted cell due,
+  which is a re-send storm for a chain the receiver still holds. The
+  sender counts the stale acknowledgement and leaves its epoch alone
+  (§6.5.3).
+
+### 5.1.1 The identities (normative)
+
+A lane carries objects from **several senders**: the media sender, and the
+intermediaries that originate their own objects (a hop report, a lane
+error, a close). Each of them numbers its own objects. The protocol
+therefore has two identities, and they mean different things:
+
+| identity | space | what it identifies | what it must not be read as |
+|---|---|---|---|
+| `object_id` (header) | monotone per (lane, direction, sender epoch) — **per sender** | one object, for deduplication (§4.4) and for `ECHO_OF_OBJECT_ID` | a loss signal: the space is per sender, so a gap in it is not a lost object |
+| `UPDATE_ID` (TLV `0x01`) | monotone per (lane, direction, receiver) — the media sender's own | one media update, for the acknowledgement window (§5.2), the repair accounting (§6.5) and the loss accounting (§5.2) | a codec's private counter |
+
+**The acknowledgement credits the protocol's update id.** A receiver's
+applied-update window, the `highest_applied_update_id` it reports, and
+the loss it reports are all in the **update-id** space, because that is
+the space the sender numbers its media in and the only space in which a
+gap means "the peer never saw this".
+
+A codec's body MAY carry its own update id, and it MUST mirror the
+protocol's: a body whose id disagrees with the TLV is the `META_MISMATCH`
+of §4.3. An application that drives a receiver therefore uses the
+protocol's update id, and the body's id is the codec's own bookkeeping.
+
+**The part index is the transport's.** `PART` (TLV `0x03`) names the
+part within its update, `0..part_count-1`; a codec's body mirrors it the
+same way the update id is mirrored. The idempotence record of §5.1 is
+therefore keyed by the protocol's `(update_id, part_index)`.
+
+**The chain epoch is the sender's**, as §5.1 says: it is raised by the
+sender, adopted by a receiver only when it is greater, and never moved
+backwards by an acknowledgement.
+
 Everything else — the validation order, the atomicity, the
 acknowledge-on-apply rule — belongs to the codec, and the codec's
 specification owns it.
@@ -133,6 +175,20 @@ counters cover, the acknowledgement, the probe echoes, its own outbound
 backlog, its measured frame rate and render times, its input queue depth
 and input counters, its path switches, the active carrier, and an
 application identifier for diagnostics.
+
+**The gaps are the gaps in the update-id space.** The `lost_objects` a
+receiver reports is the number of media updates it never saw, counted in
+the **update-id** sequence of §5.1.1 — the space the media sender numbers
+its updates in, and the only space in which a gap is a lost update. The
+object-id sequence is **not** that space: it is per sender (§5.1.1), so a
+gap in it is an intermediary's own object arriving, not a loss. A
+receiver that reports the object-id gap instead reports billions of lost
+objects the moment an intermediary originates an object, and the sender's
+estimator then pins itself at its floor on a clean link.
+
+`received_objects` counts the objects the receiver received, and
+`duplicated_objects` counts the ones it saw twice, in the object-id
+space: the duplicate is a property of one sender's stream.
 
 `MediaHopReport` is what an intermediary reports: how many objects and
 bytes it discarded in the window, how many it coalesced, its queue depths,

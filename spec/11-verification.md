@@ -32,6 +32,8 @@ corpus scenarios. A conforming implementation MUST hold all of them.
 | INV-8 | The input echo is at most `2 × RTT + 250 ms` whenever the link delivers any object. |
 | INV-9 | A session survives every outage and flap schedule in `flap(5, 10 s, 10 s)` with no lost session and exactly one resumed lane per receiver. |
 | INV-10 | Every drop is attributed to exactly one hop: the sum of the hop reports and the link loss equals the receiver-reported loss, within one object. |
+| INV-11 | The receiver-reported loss is the gap in the **update-id** space (§5.2, §5.1.1): it is zero on a clean link whatever objects the intermediaries originate, and it equals the media updates the receiver never saw. |
+| INV-12 | The chain epoch only moves forward (§5.1, §6.5.3): an acknowledgement naming an older epoch is counted and never obeyed, and the sender's applied-update watermark survives it. |
 
 ## 11.3 The harness
 

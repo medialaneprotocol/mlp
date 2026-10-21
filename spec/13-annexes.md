@@ -52,6 +52,8 @@ The properties a conforming implementation must hold under any profile
 | INV-8 | The input echo is at most `2 × RTT + 250 ms` whenever the link delivers any object. |
 | INV-9 | A session survives every outage and flap schedule, with no lost session. |
 | INV-10 | Every drop is attributed to exactly one hop. |
+| INV-11 | The receiver's loss accounting is made in the **update-id** space (§5.2, §5.1.1), so an intermediary's own object never reads as a loss and a clean link never looks lossy. |
+| INV-12 | The chain epoch only moves forward (§5.1, §6.5.3): a stale acknowledgement is counted, never obeyed. |
 
 ### 13.4 Annex S — the acceptance stories
 

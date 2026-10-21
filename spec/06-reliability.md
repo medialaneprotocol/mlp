@@ -189,9 +189,15 @@ index) and truncated to `budget_bytes` and `max_object_bytes`.
 The sender's emitted state `E` advances exactly at the cells
 an emitted object carried, and the receiver's pending set gains those cells
 with the time they were sent and the update they were sent in. The update
-id increments per receiver; `update_base` is the last update id emitted for
-that receiver; `flags.ANCHOR` is set whenever the sender knows the receiver
-cannot chain — a gap, a resume, an epoch change.
+id increments per receiver; `update_base` is the last update id the
+receiver **confirmed** — its last applied update id, as the
+acknowledgement reports it (§5.2). The sender never chains onto an update
+the receiver has not confirmed: an unconfirmed update may never have been
+applied, and a delta that extends an update the receiver does not hold
+would be refused. `flags.ANCHOR` is set whenever the sender knows the
+receiver cannot chain — a gap, a resume, an epoch change, or anything it
+sent that is still unacknowledged — and an anchor applies onto any held
+state (§5.1), so it is the frame that heals a broken chain.
 
 ### 6.3.4 Fragmentation
 
@@ -282,6 +288,17 @@ per receiver. If an acknowledgement arrives for an update that fell out of
 the ring, the sender conservatively marks every cell emitted after the last
 acknowledged update as due — correct at the cost of re-sending, and
 counted.
+
+**The epoch moves forward only.** The chain epoch belongs to the sender
+(§5.1): the sender raises it when it breaks the chain, and a receiver
+adopts a greater one. An acknowledgement that names an epoch **older**
+than the sender's is a stale acknowledgement — the receiver has not seen
+the break yet — and the sender counts it and leaves its epoch alone.
+Adopting it would reset the applied-update watermark and re-mark every
+emitted cell due: a re-send storm for a chain the receiver still holds.
+An acknowledgement that names a **greater** epoch is the receiver
+reporting a break the sender did not make, and the sender adopts it and
+starts an anchor plan, as §5.1 says.
 
 ### 6.5.4 The repair delay
 

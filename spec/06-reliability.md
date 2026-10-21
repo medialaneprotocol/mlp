@@ -170,6 +170,13 @@ the mode becomes `NoFeedback`, the pace drops to `pace_floor × 2`,
 `target_fps` to 1, `max_object_bytes` to 1 024, and only P0 and P1 objects
 are scheduled. One report clears it. The stall is counted.
 
+**A cap that dropped takes the objects it forbids with it.** The cap is
+the sender's own bound on what one object may carry, so an object the
+sender admitted under the old cap is still an object the current cap
+forbids: the sender drops it and counts it rather than putting it on the
+wire. Its cells stay pending, and the repair plan covers them (§6.5.3,
+§6.6).
+
 ### 6.2.9 Hop attribution
 
 The receiver's `loss_ratio` minus the sum of the

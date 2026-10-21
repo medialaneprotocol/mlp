@@ -97,11 +97,17 @@ exists.
 - `goodput_bps = received_bytes × 8 000 / window_ms` — the receiver's
   reported payload bytes only.
 - `delivered_ratio = received_objects / (received_objects + lost_objects)`,
-  and `loss_ratio = 1 − delivered_ratio`, from gap detection on
-  `object_id`. A lane's writer drains strictly by priority (D-3), so an
-  object may overtake an older one on the wire: the expectation is the
-  highest object id seen plus one, an id below it is **reordered** and not
-  lost, and a reordered object never lowers the expectation.
+  and `loss_ratio = 1 − delivered_ratio`, from gap detection on the
+  **update-id** space (§5.2). The update id is the protocol's identity of a
+  media update, and it is monotone per receiver, so a gap in it is a media
+  update the receiver never saw. The object id cannot carry that meaning:
+  its space is per sender (§5.1.1), and a lane carries objects from several
+  senders — the media sender and the intermediaries that originate their own
+  objects — so a gap in it is an intermediary's object arriving, not a loss.
+  A lane's writer drains strictly by priority (D-3), so a media update may
+  overtake an older one on the wire: the expectation is one past the highest
+  update id seen, an id at or below the highest is **reordered** and not
+  lost, and a reordered update never lowers the expectation.
 - `rtt_min` is the minimum over a 60 s horizon; `rtt_ewma` is
   `EWMA(α = 1/8)`; `jitter` is `EWMA(|rtt_sample − rtt_ewma|, α = 1/4)`.
 - `queue_delay = rtt_ewma − rtt_min` — the delay-based congestion signal.
@@ -239,6 +245,13 @@ wire. Its cells stay pending, and the repair plan covers them (§6.5.3,
 §6.6).
 
 ### 6.2.9 Hop attribution
+
+**The attribution is made in the update-id space.** The receiver's
+`lost_objects` counts the media updates it never saw (§5.2), and a hop's
+report names the media objects it discarded — a discarded object is one part
+of one media update, and it is the content of an update the receiver never
+saw. The two account for the same losses, and the attribution subtracts one
+from the other.
 
 The receiver's `loss_ratio` minus the sum of the
 hops' reported `objects_dropped` is the unattributed loss — the number that

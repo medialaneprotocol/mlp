@@ -132,12 +132,22 @@ peer quotes that epoch verbatim in its echo. The round trip is therefore
 measurement, and no assumption that the two ends' session clocks agree.
 
 A delivered probe raises `btlbw` to `max(btlbw, probe_rate ×
-delivered_ratio)`; a probe whose echo did not come back within
+delivered_ratio / 1.25)`; a probe whose echo did not come back within
 `2 × RTT + 250 ms` (§9.1) multiplies `btlbw` by 0.9 and is counted. A probe
 sent before the sender measured a round trip has no deadline: its answer
 *is* the measurement, and a link that has never answered anything is the
 no-feedback case, not a lost probe. A probe never carries content and is
 never counted into `budget_bytes`.
+
+**The probe confirms the rate it tested, not the step it was paced at.**
+The probe is offered at `min(1.25 × btlbw, 1.25 × pace)` — a *step above*
+the estimate — so what a delivered probe proves is that the link carried
+the step, and the estimate it may be raised to is the step's **base**: the
+rate the probe tested. Raising the estimate to the step itself would
+ratchet it by the probe's own headroom every time a probe came back, and a
+healthy link would climb to the ceiling on its own. The estimate grows
+through the goodput (§6.2.3), which is a measurement of what the link
+actually delivered.
 
 **The receiver probes too.** The round trip a receiver reports is its own
 measurement, taken with its own probe; a receiver that has not measured

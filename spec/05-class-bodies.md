@@ -204,6 +204,22 @@ epoch verbatim in its echo — the round trip is then measured on the
 sender's own clock, with no wall clock and no assumption that the two ends'
 session clocks agree.
 
+**The echo names the object it answers.** The answer to an object sent
+with `ECHO_REQUESTED` carries the answered object's `object_id` in
+`ECHO_OF_OBJECT_ID` (§4.3) and the prober's epoch verbatim in
+`SEND_EPOCH_MS`. That object id is the whole correlation: a probe's own
+`probe_id` is a body field, and a body field is not an identity — a peer
+that correlates by it cannot recognise the answer to its own probe when
+the two counters differ, and a probe's counter is the prober's own space,
+not the lane's.
+
+The echo is an object of its own, so a hop that never decodes a body —
+every hop in this protocol forwards objects byte for byte — can match the
+answer to the probe it sent and measure its own round trip. A peer that
+carries the echo inside a report's `probes` field carries the same object
+id there; the field and the TLV are one fact in two carriers, and the TLV
+is the one a hop can read.
+
 ## 5.3 Class CONTROL (C0) and class PATH (C5)
 
 `MediaControlObject` is the oneof wrapper of the control class:

@@ -460,6 +460,14 @@ receiver, never globally. A plan that cannot finish within
 `plan_deadline = 2 × RTT + 30 s` is reported as overdue and restarted with
 the newest cell set: on a collapsing link, freshness beats completeness.
 
+**A plan's outstanding work is the sender's demand while the plan runs.** The
+rate that carries the plan is the rate the sender uses: the plan must finish
+inside `plan_deadline`, and the estimator measures the goodput the sender
+produced (§6.2.4), so a plan paced by the idle demand measures a link that
+carries nothing and can never finish. The demand is the plan's remaining
+bytes over the deadline — the smallest rate that finishes it in time — and it
+is bounded by the same ceiling every other rate is.
+
 **Why a plan rather than a reset.** A reset is full-coverage by definition;
 on a 32 kbps link no budget makes it timely, and it remains the only object
 that can lose a receiver's whole progress. A plan re-sends the cells the

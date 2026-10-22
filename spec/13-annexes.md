@@ -22,6 +22,7 @@ from the sections and from the reference implementation.
 | D-16 | An intermediary **reports what it dropped**, so a loss is attributable. | "The last mile or our stack?" is unanswerable without per-hop attribution. |
 | D-17 | The media lane carries **no audio**: the tier envelope's budget belongs to the screen. | A media lane at the T4 envelope carries less than one second of audio, so an audio stream on it would spend the whole budget on something the envelope does not promise. |
 | D-19 | A frame is **decomposed into several objects** rather than sent oversize. | The carrier's cap is not negotiable, and an oversize object is a permanent loss rather than a delay. |
+| D-20 | The lane's state is decided by the **facts both ends can measure** — the content's freshness, its convergence and its loss — and **neither end's claim overrides the other's staleness**. | A lane that one end calls `LIVE` while the other calls `STALE` shows two users two truths. The pace is not a fact about the link: it is the sender's output, and a sender with little to send sits at the floor on a perfect link (§6.7.1). |
 
 ### 13.2 Annex N — the normative refinements
 

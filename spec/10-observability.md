@@ -26,7 +26,7 @@ the session last reported.
 | How long did recovery take? | the session-recovery histogram, the park duration, the resume outcomes |
 | Is anything queuing? | the media queue depth at each hop, the input queue depth, the receiver's backlog |
 | Is the receiver converged? | `mlp_converged`, `mlp_pending_cells`, `mlp_stale_fraction`, and the receiver's own `converged` and `stale_cells` |
-| What does the user see? | the lane-state gauge, and the receiver-state gauge — the values of the state machine of §6.7 |
+| What does the user see? | the lane-state gauge, and the receiver-state gauge — the values of the state machine of §6.7.1 |
 | Is the fleet degrading? | the quality score aggregated per tenant, and the echo and cadence histograms |
 | Which peers speak this version? | `mlp_protocol_version{version="1"}` — one series per peer, carrying the single version the build accepts and emits |
 
@@ -70,8 +70,8 @@ The receiver's local drop reasons, which are never reported back, are:
 
 - **Lane states**: `STARTING`, `LIVE`, `DEGRADED`, `CONVERGING`, `STALE`,
   `PARKED`, `DISABLED`, `DECODE_BOUND`, `NO_FEEDBACK`, `MEDIA_UNSUPPORTED`.
-  They form a priority order — a receiver's state is the most significant
-  one that applies.
+  They form a priority order — an end's state is the most significant
+  one that applies — and §6.7.1 states which fact decides each of them.
 - **Close codes**: `normal`, `server_shutdown`, `policy`, `superseded`,
   `park`.
 - **Unsupported reasons**: `protocol`, `disabled_by_policy`,

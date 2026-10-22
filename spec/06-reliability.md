@@ -455,6 +455,86 @@ an improvement rather than a wager.
   frozen picture with the "has content" flag still set is explicitly not a
   state.
 
+### 6.7.1 The lane's state (normative)
+
+A lane has **two observers**, and the state vocabulary names what each of them
+claims.
+
+- The **sender** publishes `MediaLaneState` (§5.3): the state of the **link**
+  as the sender sees it.
+- The **receiver** publishes the **receiver state** (§10.2): the state of the
+  **content** as the receiver sees it.
+
+The two are computed from the same three facts. Each fact is measured by the
+end that can measure it, and carried to the other by the protocol's own
+messages.
+
+| fact | the receiver measures | the sender measures |
+|---|---|---|
+| **freshness** | the time since the last update it applied | the time since the receiver's applied-update watermark advanced (§5.2) |
+| **convergence** | the cells it believes stale (§6.5.2) | the pending set the acknowledgement names (§6.5.3) |
+| **quality** | the loss it attributed in the update-id space (§6.2.9) | the same ratio, read from the feedback (§6.2.2) |
+
+**Freshness decides `STALE`.** The staleness budget is
+`stale_budget = 3 × (report_interval + 1 s)` — the same shape as the
+no-feedback grace of §6.2.8, and scaled to the link's cadence the way that
+grace is. A receiver that has applied no update within the budget is
+**stale**; a sender whose receiver's watermark has not advanced within the
+budget has a **stale** receiver. A lane that is **open but stalled** — the
+carrier is up, objects still flow, the content does not advance — is `STALE`
+on both sides. `STALE` is not a closed lane and not a degraded one: it says
+the content is frozen while the lane is open.
+
+**Neither end's `LIVE` overrides the other's staleness.** A receiver whose own
+freshness is exhausted MUST report `STALE`, whatever the sender's last
+`MediaLaneState` said; a sender that has seen no advancing watermark within
+the budget MUST report `STALE`, whatever the receiver last reported. The two
+ends measure one fact on two clocks, and the fact is the content's freshness.
+
+**Convergence decides `CONVERGING`.** The receiver's belief is the authority
+(§5.2): a receiver that holds cells the sender has emitted is **converging**
+until its pending set is empty.
+
+**Quality decides `DEGRADED`.** `DEGRADED` is a claim about the **content's
+completeness**, and it is entered on the same measurement on both sides: the
+receiver's attributed loss ratio above `loss_degraded = 0.05` (§6.2.4). The
+receiver measures the loss; the sender reads the same ratio from the feedback
+(§6.2.2) and reports `DEGRADED` on it.
+
+**The pace is not evidence.** A sender's pace is bounded below by `pace_floor`
+(§6.2.4), and a sender with little to send sits at the floor on a perfect
+link (§6.2.7): the pace is the sender's **output**, not a measurement of the
+link. A lane MUST NOT be `DEGRADED` because its pace is below a nominal rate,
+and a nominal rate MUST NOT be read as a verdict on the lane. A lane whose
+content converges with no attributed loss is `LIVE`, whatever its pace is.
+
+**The order.** The states form a priority order, and an end's state is the
+most significant one that applies (§10.5):
+
+`MEDIA_UNSUPPORTED` > `DISABLED` > `STARTING` > `PARKED` > `NO_FEEDBACK` >
+`STALE` > `DECODE_BOUND` > `CONVERGING` > `DEGRADED` > `LIVE`.
+
+**Why the two ends cannot disagree.** A lane that one end calls `LIVE` while
+the other calls `STALE` is a session in which two users see two truths, and
+the operator cannot tell which one is the session. The rule gives each end
+one fact to measure — the receiver the content's freshness, the sender the
+same freshness through the acknowledgement's watermark — one threshold to
+measure it against, and one precedence to resolve the rest. The two states
+that a deployment shows side by side — the sender's `MediaLaneState` and the
+receiver's state — are then the same lane's state, read from the two ends'
+own evidence.
+
+**Why the pace is not evidence.** The pace is the rate the sender may send
+at, and the sender chooses it from the demand it has and the capacity it
+measured (§6.2.4). A sender with a static surface has almost no demand, so
+it sends at the floor on a link that would carry a hundred times that; a
+sender that reads its own pace as a verdict on the link therefore reports
+`DEGRADED` on a perfect link, and the receiver — whose content arrived
+whole and fresh — is told the lane is degraded. The loss is the fact both
+ends can measure: it is counted in the update-id space (§5.2, §6.2.9), it
+is carried in the feedback the sender already receives, and it says what the
+user actually experienced.
+
 ## 6.8 Carrier selection and hysteresis
 
 A receiver MAY be served over a datagram carrier when one is available.

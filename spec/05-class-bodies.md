@@ -270,7 +270,8 @@ plan.
 
 `MediaLaneState` is the sender's authoritative state: `STARTING`, `LIVE`,
 `DEGRADED`, `CONVERGING`, `STALE`, `PARKED`, `DISABLED`, `DECODE_BOUND`,
-`NO_FEEDBACK`, `MEDIA_UNSUPPORTED`.
+`NO_FEEDBACK`, `MEDIA_UNSUPPORTED`. What each state means, which end decides
+it, and the threshold it is decided against are stated in §6.7.1.
 
 `MediaClose` carries a code — `normal`, `server_shutdown`, `policy`,
 `superseded`, `park` — and a `park` flag that is the "come back" signal:

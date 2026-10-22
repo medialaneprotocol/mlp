@@ -13,7 +13,7 @@ must never delay either.
 | **C1** | Input and command feedback | input objects, acknowledgements, repair requests, clipboard, input toggles | control lane | reliable, ordered, deadline-bounded, deduplicated | 1 |
 | **C2** | Pointer | pointer position samples, pointer state corrections | media lane (unordered on a datagram carrier) | unreliable, latest-wins | 5 |
 | **C3** | Media | MLP-framed media updates, path probes | media lane | atomic objects, repair by re-encode, coalescible | 6 (interactive), 7 (background refresh) |
-| **C4** | Feedback and telemetry | `MediaFeedback`, `MediaAck`, `MediaHopReport`, `MediaProbe` echoes | media lane (a report may ride the control lane when the media lane is down) | reliable within a reporting window; the loss of one report is harmless | 0 for acknowledgements, 2 for reports |
+| **C4** | Feedback and telemetry | `MediaFeedback`, `MediaAck`, `MediaHopReport`, `MediaProbe` echoes | media lane (a report may ride the control lane when the media lane is down, and **every hop forwards it**, §3.2 rule 1) | reliable within a reporting window; the loss of one report is harmless | 0 for acknowledgements, 2 for reports |
 
 Two classes do not appear on the media lane: **input** and **session
 control** stay on the control lane, where their ordering guarantees matter
@@ -26,6 +26,20 @@ and their volume does not.
    media fragment larger than 16 KiB
    (`MAX_CONTROL_LANE_OBJECT_BYTES`), enforced at every hop with a counted
    drop.
+
+   **The feedback class is the control lane's own traffic when the media
+   lane is down.** A report that rides the control lane is forwarded by every
+   hop, and a hop that drops it starves the sender's estimator (§6.2.6): with
+   no feedback the lane falls into its no-feedback safety net, its rate
+   collapses to the floor, and a plan that owes the receiver a whole picture
+   (§6.6) can never finish inside its deadline — the receiver's picture stays
+   incomplete, the acknowledgement that names the applied update never
+   arrives, and the echo grows behind it.
+
+   The media **bulk** does not travel on the control lane: an update that
+   arrived there would bypass the media lane's pacing, coalescing and
+   isolation, so a hop drops and counts it. A payload the hop cannot parse
+   carries no class it may vouch for, and it is dropped as well.
 
 2. **Strict priority within a lane.** A lane's writer drains
    C0 → C1 → C2 → C4 → C3(priority 6) → C3(priority 7). The MLP priority

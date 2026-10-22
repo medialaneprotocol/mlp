@@ -222,6 +222,16 @@ becomes `NoFeedback`, the pace drops to `pace_floor × 2`, `target_fps` to
 1, `max_object_bytes` to 1 024, and only P0 and P1 objects are scheduled.
 One sign of life clears it. The stall is counted.
 
+**The safety net is a last resort, and the lane must be able to leave it.**
+The mode is entered when the peer's traffic stops, and the way out is the
+traffic returning — so a hop that drops the feedback class (§3.2 rule 1) keeps
+the lane in the net for as long as the media lane is down, and a lane in the
+net cannot finish a plan (§6.6): its rate is the floor, its updates are one
+per second, and the receiver's picture never completes. The feedback's
+arrival therefore must not depend on the media lane's health: the report
+rides the control lane when the media lane is down, and every hop forwards
+it.
+
 **A sign of life is any object the peer sends: a report, an
 acknowledgement, or the echo of a probe this sender sent.** A report is the
 estimator's *measurement*; the proof that the lane is alive is the traffic

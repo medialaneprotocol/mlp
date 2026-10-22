@@ -310,6 +310,23 @@ timer, with
 `REFLECTS_INPUT_SEQ`. The pacer still enforces the pace, so a pulse can
 delay — but it can never violate the rate.
 
+**The pulse is the echo's carrier, and a carrier is not the bulk.** The
+pulse is the object that carries the input sequence the receiver answers
+(§5.2, annex N-1), and the echo's promise is a quarter of a round trip
+(§9.1). Three rules follow, and they are what make the promise hold:
+
+* the sender's own write queue never refuses a pulse because the media bulk
+  filled it: the pulse takes the oldest queued object's place, and the
+  bulk's object is the one that may be dropped (its cells are re-encoded by
+  the repair plan, §6.6);
+* the sender releases a pulse before the bulk it would otherwise wait behind;
+* a hop's coalescing slot does not replace a pulse (§3.2 rule 5).
+
+A carrier that is dropped, or that waits behind the bulk, does not merely
+delay the echo: the receiver answers with the input sequence it last saw,
+and the sender measures the age of **that** sequence — so the measurement
+grows with every carrier that never arrived.
+
 ## 6.4 Pacing (normative)
 
 ### 6.4.1 The token bucket

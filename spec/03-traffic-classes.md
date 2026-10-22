@@ -34,6 +34,14 @@ and their volume does not.
    them is sized for the class's own window (a reporting window for C4), and
    the media bulk has its own slot, so a full lane never costs a report.
 
+   **The echo's carrier is not the bulk.** An object that carries the input
+   sequence the receiver answers (§6.3.5) is a fact the sender cannot wait
+   for, exactly like the report that names it (§6.2.1): the echo's promise is
+   a quarter of a round trip (§9.1), and the bulk's queue is a whole frame
+   time at best. A writer therefore drains an echo-critical object before the
+   media bulk it would otherwise wait behind, and a sender's own write queue
+   never refuses one because the bulk filled the queue (§6.3.5).
+
 3. **Reserved rate.** The media-lane pacer reserves
    `reserved_rate = max(2 kbps, 10 % × pace_bps)`; a media object may not be
    scheduled if doing so would starve the reserve for more than
@@ -48,12 +56,15 @@ and their volume does not.
    never parts of two (§4.4). A waiting **anchor** object is never evicted
    by a chained one: the anchor is the only thing that can repair a
    receiver, so an incomplete anchor is protected and a chained update
-   offered in its place is refused whole. The reasons a slot may drop an
-   object are `coalesced`, `replaced_incomplete`, `anchor_protected`,
-   `fragment_gap`, `missed_first_fragment`, `incomplete`, `invalid`, and
-   `superseded_by_plan` — the last meaning a queued object for a cell set a
-   newer plan already covers was dropped, which is not a loss because the
-   accounting never counted it as sent.
+   offered in its place is refused whole. An **echo-critical** object — one
+   carrying the input sequence the receiver answers (§6.3.5) — is protected
+   the same way: the echo it carries is a fact the sender cannot wait for,
+   and a coalesced-away carrier is an echo that never comes back. The
+   reasons a slot may drop an object are `coalesced`, `replaced_incomplete`,
+   `anchor_protected`, `fragment_gap`, `missed_first_fragment`, `incomplete`,
+   `invalid`, and `superseded_by_plan` — the last meaning a queued object for
+   a cell set a newer plan already covers was dropped, which is not a loss
+   because the accounting never counted it as sent.
 
 6. **Lane-mode fallback.** If the media lane cannot be established, both
    lanes share the control connection and the lane is in `single` mode.

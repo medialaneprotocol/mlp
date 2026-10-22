@@ -31,7 +31,7 @@ each is asserted.
 
 | id | Refinement |
 |---|---|
-| N-1 | **Measurable echo.** The sender stamps each update with the highest input sequence its content includes, and the receiver computes the echo from it. |
+| N-1 | **Measurable echo.** The sender stamps the update that carries the input's effect with the highest input sequence its content includes, and the receiver computes the echo from it. The carrier is protected: it is never refused by the sender's write queue, never released behind the bulk, and never replaced by a hop's coalescing slot (§6.3.5, §3.2). |
 | N-2 | **Convergence is a set, not a feeling.** `pending_cells(V) = ∅` and `applied_update_id == last_sent_update_id(V)`, both exported. |
 | N-3 | **The T4 floor is text-first**, and a stream carrier may not sustain it. The structural properties hold on every carrier; the goodput floor is guaranteed only where a loss-tolerant carrier is in use. |
 | N-4 | **The outage budget arithmetic.** Every idle timeout exceeds the outage target with margin, and the continuity machinery — not a timeout — bounds the recovery. |
@@ -50,7 +50,7 @@ The properties a conforming implementation must hold under any profile
 | INV-5 | Every queue stays within its cap. |
 | INV-6 | No object exceeds `max_object_bytes`, and no update exceeds `max_parts × the carrier's fragment cap`. |
 | INV-7 | The bytes sent in any one-second window are at most `pace_bps/8 × 1.25`. |
-| INV-8 | The input echo is at most `2 × RTT + 250 ms` whenever the link delivers any object. |
+| INV-8 | The input echo is at most `2 × RTT + 250 ms` whenever the link delivers any object. The echo is measured the way the **sender** measures it (§5.2): from the sender's application of the input to the arrival of the acknowledgement that names it. |
 | INV-9 | A session survives every outage and flap schedule, with no lost session. |
 | INV-10 | Every drop is attributed to exactly one hop. |
 | INV-11 | The receiver's loss accounting is made in the **update-id** space (§5.2, §5.1.1), so an intermediary's own object never reads as a loss and a clean link never looks lossy. |

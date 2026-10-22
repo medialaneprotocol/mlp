@@ -29,7 +29,7 @@ corpus scenarios. A conforming implementation MUST hold all of them.
 | INV-5 | Every queue — the sender's, the intermediaries', the receiver's — stays within its cap under any profile. |
 | INV-6 | No object exceeds `max_object_bytes`, and no update exceeds `max_parts × the carrier's fragment cap`. |
 | INV-7 | The bytes sent in any one-second window are at most `pace_bps/8 × 1.25`; probes are accounted separately. |
-| INV-8 | The input echo is at most `2 × RTT + 250 ms` whenever the link delivers any object. |
+| INV-8 | The input echo is at most `2 × RTT + 250 ms` whenever the link delivers any object. The echo is measured the way the **sender** measures it (§5.2): from the sender's application of the input to the arrival of the acknowledgement that names it. |
 | INV-9 | A session survives every outage and flap schedule in `flap(5, 10 s, 10 s)` with no lost session and exactly one resumed lane per receiver. |
 | INV-10 | Every drop is attributed to exactly one hop: the sum of the hop reports and the link loss equals the receiver-reported loss, within one object. |
 | INV-11 | The receiver-reported loss is the gap in the **update-id** space (§5.2, §5.1.1): it is zero on a clean link whatever objects the intermediaries originate, and it equals the media updates the receiver never saw. |

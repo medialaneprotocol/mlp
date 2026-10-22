@@ -168,6 +168,15 @@ the echo *from* (annex N, N-1); it is not the applied content's echo.
 A new echo is a fact the sender cannot wait for: the report that names it
 goes out at once, not at the idle cadence (§6.2.1).
 
+**The echo's round trip is the sender's.** The sender measures the echo from
+the moment it applied the input to the moment the acknowledgement that names
+it arrives back — the round trip a user waits for, and the one a deployment
+measures (`rm_host_media_echo_seconds`). The receiver's own measurement of
+the same path (the input's send to the update's apply) is the other end of
+it; both are the same round trip, and the promise (annex INV-8) is on the
+sender's, because the sender is the one that applied the input and is owed
+the answer.
+
 Validation: bits above `highest_applied_update_id` MUST be 0 ⇒
 `ACK_BAD_BITMAP`; `stale_cells <= applied_cell_count` ⇒ `ACK_BAD_COUNT`.
 

@@ -497,10 +497,7 @@ messages.
 no-feedback grace of §6.2.8, and scaled to the link's cadence the way that
 grace is. A receiver that has applied no update within the budget is
 **stale**; a sender whose receiver's watermark has not advanced within the
-budget has a **stale** receiver. A lane that is **open but stalled** — the
-carrier is up, objects still flow, the content does not advance — is `STALE`
-on both sides. `STALE` is not a closed lane and not a degraded one: it says
-the content is frozen while the lane is open.
+budget has a **stale** receiver.
 
 **Neither end's `LIVE` overrides the other's staleness.** A receiver whose own
 freshness is exhausted MUST report `STALE`, whatever the sender's last
@@ -510,13 +507,68 @@ ends measure one fact on two clocks, and the fact is the content's freshness.
 
 **Convergence decides `CONVERGING`.** The receiver's belief is the authority
 (§5.2): a receiver that holds cells the sender has emitted is **converging**
-until its pending set is empty.
+while those cells are a share of the grid the user can see —
+`converging_pending = 0.25`. Below that share the holes are repaired inside a
+repair round, and a lane whose whole fault is a cell or two is not a picture
+that is still arriving: it is `LIVE` or `DEGRADED` by the other two facts.
 
 **Quality decides `DEGRADED`.** `DEGRADED` is a claim about the **content's
-completeness**, and it is entered on the same measurement on both sides: the
-receiver's attributed loss ratio above `loss_degraded = 0.05` (§6.2.4). The
-receiver measures the loss; the sender reads the same ratio from the feedback
-(§6.2.2) and reports `DEGRADED` on it.
+quality**, not about its completeness. The link is losing updates the
+receiver never saw, at a ratio above `loss_degraded = 0.05` (§6.2.4), and the
+repair is what keeps the picture whole: a lane whose cells have converged on a
+link that drops a twentieth of its updates is `DEGRADED` and its picture is
+whole, while a lane whose cells are still arriving is `CONVERGING` whatever
+its loss. The receiver measures the loss; the sender reads the same ratio from
+the feedback (§6.2.2) and reports `DEGRADED` on it.
+
+**The transitions (normative).** The facts move — the content advances, the
+repair closes, the loss falls back — and the state follows them. These are the
+entries and the exits of the live states; a state the table does not name is
+entered and left by the paragraph that names it, and an end publishes its
+state when it changes and not otherwise.
+
+| state | entered when | left when |
+|---|---|---|
+| `LIVE` | the content advanced within `stale_budget`, the pending set is empty or at or below `converging_pending`, and the attributed loss ratio is at or below `loss_degraded` | any of the three facts leaves its condition |
+| `DEGRADED` | the attributed loss ratio is above `loss_degraded` | the ratio is back at or below `loss_degraded`. The ratio is the last closed window's measurement, so one quiet window leaves the state; the estimator's own mode is the slower of the two (three quiet reports, §6.2.4), and the lane reads the measurement, not the mode |
+| `CONVERGING` | the receiver holds cells the sender has emitted and they are above `converging_pending` of the grid | the pending set is empty, or what is left is at or below the threshold |
+| `STALE` | the content has not advanced within `stale_budget` | the content advances: one applied update restores the freshness fact, and the state the other two facts decide applies at once |
+| `NO_FEEDBACK` | no sign of life for `3 × report_interval + 2 s` (§6.2.8) | one sign of life — a report, an acknowledgement, or the echo of a probe this sender sent |
+
+**A lane that is open but stalled.** The carrier is up, objects still flow,
+the acknowledgements arrive, the repair runs — and the content does not
+advance. Both ends read `STALE` and neither may read anything else: the
+receiver's own freshness is exhausted and the sender's watermark has not
+moved, against the same budget. It is not `DEGRADED`: nothing was lost, and
+the content the receiver holds is whole and frozen, so `DEGRADED` would say
+the stream is dropping what the receiver should have. It is not `LIVE`: the
+content is not advancing. It is not a closed lane either: the pace holds, the
+repair continues, the acknowledgement timeline runs, and `STALE` says only
+what is true — the picture has stopped while the lane has not. The state ends
+the way it began: the first update the receiver applies restores the
+freshness fact, and the lane reads `CONVERGING`, `DEGRADED` or `LIVE` by its
+convergence and its loss.
+
+**Who decides.** The receiver decides the receiver's state, from the three
+facts it measures itself: the updates it applied, the cells it believes stale,
+and the loss it attributed. The sender decides the sender's state, from the
+same three facts as the protocol carried them: the applied-update watermark
+and the pending set the acknowledgement names, and the loss ratio the feedback
+carries. The sender's `MediaLaneState` is therefore the sender's **reading of
+the receiver's facts**, and the receiver's own state is the **measurement**.
+A receiver that cannot measure one of the facts of its own reads the sender's
+claim for it, and the sender's claim is never a second truth: the two readings
+are one lane's state, and a difference between them is a message that did not
+arrive — an acknowledgement lost on the way back stops the sender's watermark
+while the receiver's canvas advances.
+
+**The interface shows the more significant reading.** A state that describes
+an interface is the more significant of the two ends' readings, because the
+lesser one is a claim the more significant fact has already overruled: a
+stalled sender keeps a lane from reading `LIVE`, and a frozen receiver keeps
+it from reading `LIVE`, whatever the other end last said. The interface is
+where the receiver's reading and the sender's reading meet, and the order
+above is what they meet in.
 
 **The pace is not evidence.** A sender's pace is bounded below by `pace_floor`
 (§6.2.4), and a sender with little to send sits at the floor on a perfect

@@ -34,7 +34,7 @@ It never pauses content production, and it never triggers a reset.
 | The session's idle at the edge | `clamp(2 × outage + 60 s, 120 s, 600 s)`; **any inbound byte resets it** |
 | The keepalive | `clamp(3 × RTT, 5 s, 60 s)` |
 | The stall and repair window | `clamp(3 × RTT + 250 ms, 500 ms, 8 s)` — a repair delay, never a reset trigger |
-| The repair delay | stream `clamp(RTT + update_interval, 250 ms, 3 s)`; datagram `clamp(2 × RTT, 250 ms, 5 s)` |
+| The repair delay | stream `clamp(RTT + update_interval, 50 ms, 3 s)`; datagram `clamp(2 × RTT, 50 ms, 5 s)` |
 | The probe's deadline | `2 × RTT + 250 ms` — the echo promise; a probe sent before the first round-trip measurement has no deadline |
 | The idle object | `clamp(1 000 ms, 2 × RTT, 3 000 ms)` |
 | The input deadline | `clamp(2 × RTT, 5 s, 30 s)` for the pressed-set heartbeat; the per-object deadline is a deployment's setting, 5 000 ms by default |

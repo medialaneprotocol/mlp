@@ -135,7 +135,7 @@ used is a slow one.
 | state | entered when | pace | exits when |
 |---|---|---|---|
 | `StartUp` | session start | `2 × pace`, doubling per report while `loss < 0.01` and `goodput ≥ 0.9 × pace` | after 4 reports, or the first loss, or a report below `0.9 × pace` |
-| `Steady` | leaving `StartUp` | `0.9 × btlbw` | `loss > 0.05` or `queue_delay > 1 × rtt_min` |
+| `Steady` | leaving `StartUp` | `0.9 × btlbw` | `loss > 0.05` or `queue_delay > 1 × rtt_min`; 3 consecutive healthy **filled** windows with `demand > pace` ⇒ `StartUp` |
 | `Degraded` | `loss > 0.05` or `queue_delay > 1 × rtt_min` | `0.7 × pace` per report, floored at `pace_floor` | 3 consecutive reports with `loss < 0.01` **and** `queue_delay < 0.5 × rtt_min` ⇒ `StartUp` |
 | `Floor` | `pace < pace_floor` | `pace_floor` (8 kbps), with media disabled except P0 and the idle heartbeat | reports resume ⇒ `StartUp` |
 
@@ -145,6 +145,19 @@ The `0.7 ×` decay of the degraded state applies to capacity-limited windows
 only (§6.2.3): a window the sender did not fill says nothing about the
 link's capacity, and a link that keeps delivering must not be ratcheted
 below what it demonstrably carries.
+
+**`Steady` must be able to grow, or it is a freeze.** The state's own rule
+caps the evidence at its own estimate: the sender paces at `0.9 × btlbw`, so
+its goodput cannot exceed `0.9 × btlbw`, and the max-filter never sees a
+delivery rate above what it already believes. A lane with sustained demand
+therefore re-enters `StartUp` after three consecutive windows that were
+**filled** (capacity-limited), healthy (`loss < 0.01`, `queue_delay` under
+half the round trip), and still over-demanded (`demand > pace`) — and the
+doubling asks the link for more until the link answers with the overshoot
+that ends the ramp the way the first one ended. The filled-window condition
+is the evidence: a quiet window's "no loss" is a small sample that says
+nothing about capacity, and ramping on it is the oscillation between burst
+and decay.
 
 ### 6.2.5 The budgets
 
@@ -177,7 +190,20 @@ a one-way ratchet down.
 
 The probe is a feedback-class object with
 `payload_bytes = min(8 192, 0.25 × pace_bps/8)`, sent at
-`min(1.25 × btlbw, 1.25 × pace)` with `ECHO_REQUESTED`. It carries
+`1.25 × max(btlbw, pace_bps)` with `ECHO_REQUESTED`. The rate is a step
+above the estimate — never below it: a probe paced at
+`min(1.25 × btlbw, 1.25 × pace)` tested a rate below the estimate itself
+whenever `pace < btlbw` (which is `Steady`'s own rule), a probe that could
+only ever confirm what was already known.
+
+**The probe's real payload is the sender's own traffic.** The probe object
+is capped at 8 KiB, which is noise next to the lane's rate; what a probe
+actually tests is the *step above the estimate carried by the bulk*. While
+a probe is pending in `Steady`, the estimate answers `pace × 1.25` for one
+report interval, so the window's goodput is a real measurement of the link
+carrying the step, and the max-filter (§6.2.3) reads it. A `Degraded` lane
+takes no gain: it has already reported that the last rate was too much, and
+a burst on top of that report is traffic the repair ladder pays for. It carries
 `SEND_EPOCH_MS` — the sender's session-relative ms at emission — and the
 peer quotes that epoch verbatim in its echo. The round trip is therefore
 `now − SEND_EPOCH_MS` on the sender's own clock: one clock, one
@@ -420,9 +446,12 @@ starts an anchor plan, as §5.1 says.
 
 ### 6.5.4 The repair delay
 
-`repair_delay = clamp(2 × rtt_ewma, 250 ms, 5 s)` on a
-datagram carrier and `clamp(rtt_ewma + update_interval_ms, 250 ms, 3 s)` on
-a stream carrier. A cell that passes the repair delay more than
+`repair_delay = clamp(2 × rtt_ewma, 50 ms, 5 s)` on a
+datagram carrier and `clamp(rtt_ewma + update_interval_ms, 50 ms, 3 s)` on
+a stream carrier. The floor guards a round trip that has not been measured
+yet; it is not a wait a measured round trip must also pay — on a 10 ms link
+the repair leaves when the acknowledgement should have arrived, a quarter
+second after the fact of the loss. A cell that passes the repair delay more than
 `repair_max_rounds = 4` times is escalated to P0; a cell still due after
 `2 × repair_delay` is counted as stuck and included in the next anchor
 plan.

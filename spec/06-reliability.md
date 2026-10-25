@@ -424,7 +424,15 @@ receiver still believes, and the two move independently.
 On an acknowledgement, every cell of every
 applied update is cleared from the pending set. A cell that was sent but
 not acknowledged stays pending until `repair_delay` passes, at which point
-it becomes due (P1).
+it becomes due (P1) — unless the acknowledgement's own window already
+declared its update missing: the 64-id bitmap names what the receiver
+*holds*, so an update inside the bitmap's reach that the bitmap does not
+name is an update the receiver told the sender it has not got, and its
+cells go due the moment the acknowledgement arrives. The repair waits one
+round trip for a loss that is known, not two plus a floor. (An update the
+receiver holds but has not yet applied can sit in that gap for one ack
+interval; the repair it triggers is redundant, which is the cheap side of
+the trade the ring-miss already takes — a re-send beats a wait.)
 
 The mapping from updates to cells is kept in a ring of
 `ACK_RING = max(64, ceil(2 × RTT_MS / update_interval_ms) + 8)` updates

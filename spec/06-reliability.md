@@ -217,16 +217,6 @@ sent before the sender measured a round trip has no deadline: its answer
 no-feedback case, not a lost probe. A probe never carries content and is
 never counted into `budget_bytes`.
 
-**The probe confirms the rate it tested, not the step it was paced at.**
-The probe is offered at `min(1.25 × btlbw, 1.25 × pace)` — a *step above*
-the estimate — so what a delivered probe proves is that the link carried
-the step, and the estimate it may be raised to is the step's **base**: the
-rate the probe tested. Raising the estimate to the step itself would
-ratchet it by the probe's own headroom every time a probe came back, and a
-healthy link would climb to the ceiling on its own. The estimate grows
-through the goodput (§6.2.3), which is a measurement of what the link
-actually delivered.
-
 **The receiver probes too.** The round trip a receiver reports is its own
 measurement, taken with its own probe; a receiver that has not measured
 one has no figure to report, and the sender does not read the report's

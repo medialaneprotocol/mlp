@@ -1,6 +1,6 @@
 {
   "name": "@medialaneprotocol/spec",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "The specification of the Media Lane Protocol (MLP): a transport for real-time interactive media over slow and lossy links.",
   "license": "Apache-2.0",
   "private": true,

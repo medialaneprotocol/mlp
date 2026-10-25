@@ -61,10 +61,14 @@ and their volume does not.
    scheduled if doing so would starve the reserve for more than
    `max(1 × RTT, 250 ms)`.
 
-4. **Bounded in-flight.** At most `in_flight_cap = 2` media objects may be
-   unacknowledged per receiver per hop. The *sender's own queue* is the
-   authority: no hop may write into a transport with more than
-   `2 × max_object_bytes` outstanding.
+4. **Bounded in-flight, earned pipelining.** A sender starts conservative —
+   one media object being sent plus one replacement may be unacknowledged
+   per receiver per hop — and earns depth up to `in_flight_cap` (default 8)
+   after three consecutive healthy *filled* windows under 1 % loss, with the
+   evidence weighted by time rather than by window count. Any other window
+   revokes the earned depth. The *sender's own queue* is the authority: no
+   hop may write into a transport with more than
+   `in_flight_cap × max_object_bytes` outstanding.
 
 5. **Coalescing policy.** A lane's pending slot holds whole objects and
    never parts of two (§4.4). A waiting **anchor** object is never evicted
